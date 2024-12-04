@@ -9,7 +9,9 @@ const peerConnection = new RTCPeerConnection();
 
 const FileReceiver = () => {
     const [peerId, setPeerId] = useState('');
+    const [senderId, setSenderId] = useState('');
     const [fileName, setFileName] = useState('');
+    const [downloadStatus, setDownloadStatus] = useState('Waiting for file...');
     const receivedChunks = useRef([]); // Store chunks of the file
     const isDownloading = useRef(false); // Prevent duplicate downloads
     const fileNameRef = useRef(''); // Use ref to keep track of the file name
@@ -23,6 +25,8 @@ const FileReceiver = () => {
         // Handle incoming offer from the sender
         socket.on('offer', async (data) => {
             console.log('Offer received from:', data.sender);
+            setSenderId(data.sender);
+            setDownloadStatus('Receiving');
 
             // Set the remote description from the offer
             await peerConnection.setRemoteDescription(data.offer);
@@ -49,7 +53,7 @@ const FileReceiver = () => {
             isDownloading.current = false;
 
             dataChannel.onmessage = (event) => {
-                if (event.data === '{"type":"done"}' && !isDownloading.current) {
+                if (event.data === '{"type":"Sent"}' && !isDownloading.current) {
                     // File transfer complete, reconstruct the file
                     const fileBlob = new Blob(receivedChunks.current);
                     const url = URL.createObjectURL(fileBlob);
@@ -60,8 +64,14 @@ const FileReceiver = () => {
                     link.download = fileNameRef.current || 'received-file'; // Use ref to avoid async state issue
                     link.click();
 
+                    socket.emit('file-received', {
+                        fileName: fileName,
+                        sender: senderId,
+                    });
+
                     // Mark the file as downloaded
                     isDownloading.current = true;
+                    setDownloadStatus('Received');
                 } else if (typeof event.data === 'string') {
                     try {
                         const metadata = JSON.parse(event.data);
@@ -91,7 +101,7 @@ const FileReceiver = () => {
         <div>
             <h2>Receive File</h2>
             <p>Your Peer ID: {peerId || 'Waiting for connection...'}</p>
-            <p>{fileName ? `Receiving: ${fileName}` : 'Waiting for file...'}</p>
+            <p>{fileName ? `${downloadStatus}: ${fileName}` : downloadStatus}</p>
         </div>
     );
 };

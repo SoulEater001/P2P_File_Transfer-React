@@ -5,7 +5,17 @@ const socket = io('http://localhost:5000', {
     transports: ['websocket', 'polling'],
 });
 
-const peerConnection = new RTCPeerConnection();
+const peerConnection = new RTCPeerConnection({
+    iceServers: [
+        {
+            urls: [
+                "stun:stun.l.google.com:19302",
+                "stun:stun.l.google.com:5349",
+                "stun:stun1.l.google.com:3478"
+            ]
+        }
+    ]
+});
 
 const FileSender = () => {
     const [targetId, setTargetId] = useState('');
@@ -17,7 +27,7 @@ const FileSender = () => {
 
     const sendFile = async () => {
         if (!file) return alert('Please select a file first!');
-
+        socket.emit('transfer-start', { target: targetId, fileName: file.name, fileSize: file.size, fileType: file.type });
         // Create a new data channel
         const dataChannel = peerConnection.createDataChannel('file');
         const CHUNK_SIZE = 16 * 1024; // 16 KB
@@ -38,7 +48,7 @@ const FileSender = () => {
                     if (offset < file.size) {
                         readNextChunk(); // Read the next chunk
                     } else {
-                        dataChannel.send(JSON.stringify({ type: 'done' })); // Signal the transfer is complete
+                        dataChannel.send(JSON.stringify({ type: 'Sent' })); // Signal the transfer is complete
                     }
                 }
             };
@@ -57,7 +67,6 @@ const FileSender = () => {
         socket.emit('offer', {
             target: targetId,
             offer,
-            fileName: file.name
         });
 
         // Handle ICE candidates
