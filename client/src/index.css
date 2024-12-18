@@ -2,7 +2,9 @@
 @tailwind utilities;
 @tailwind components;
 
-navbox{
-    
-    background-color: ;
+
+@layer base{
+    html{
+        @apply bg-gradient-to-t from-slate-100 to-violet-200
+    }
 }

@@ -2,19 +2,30 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header'
 import FileSender from '../components/FileSender'
-
+import Footer from '../components/Footer'
 
 function LandingPage() {
   return (
     <>
         <Header />
-        <div className ="container w-[1200px] h-[800px] m-auto mt-8 bg-purple-200 shadow-md shadow-black  " >
-        <nav className=''>
-              <ul className='flex flex-row justify-end space-x-2   '>
-                <Link to="/">Send Files</Link>
-                <Link >Received Files</Link>
-                <Link>Sent </Link>
-                <Link to ="/login"> Login</Link>
+        <div className ="container w-[1200px] h-[640px] m-auto my-8 bg-purple-200 shadow-md shadow-black  " >
+        <nav className='flex flex-row justify-between pt-2 px-4 text-violet-900 ' >
+              <ul className='text-xl'>
+                <li> ShareWare Peer 2 Peer File Transfer</li>
+              </ul>
+              <ul className='flex flex-row justify-end space-x-4 text-xl '>
+                <li className='hover:text-white'>
+                  <Link to="/">Send Files</Link>
+                </li>
+                <li className='hover:text-white'>
+                  <Link to ="/receive">Received Files</Link>
+                </li>
+                <li className='hover:text-white'>
+                  <Link>Sent</Link>
+                </li>
+                <li className='hover:text-white'>
+                  <Link to ="/login"> Login</Link>
+                </li>
               </ul>
             </nav>
             <div  className='p-4 '>
@@ -28,13 +39,8 @@ function LandingPage() {
             <div>
               <FileSender/>
             </div>
-            
-            <div class="action">
-             
-              <Link to="/receive">Recieve</Link>
-
-            </div>
         </div>
+        <Footer/>
     </>
 
   )

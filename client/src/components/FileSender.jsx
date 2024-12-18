@@ -106,15 +106,15 @@ const FileSender = () => {
     return (
         <div className="flex flex-col justify-evenly space-y-4">
             
-            <h2 className='font-bold text-center '>Send File</h2>
+            <h2 className='font-bold text-center '>Send Your Files</h2>
             <input  
-                className=''
+                className='m-auto border-2 border-purple-800 rounded-md  text-center '
                 type="text"
-                placeholder="Enter target Peer ID"
+                placeholder="Enter your ID"
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
             />
-            <div className='container h-[400px] w-[800px] m-auto flex flex-col  justify-center items-center space-y-6 '>
+            <div className='container h-[240px] w-[800px] m-auto flex flex-col  justify-center items-center space-y-6 '>
             <input 
             className='bg-purple-400 border-purple-800 text-white border-2 px-2 rounded-md '
             type="file" onChange={handleFileChange} />

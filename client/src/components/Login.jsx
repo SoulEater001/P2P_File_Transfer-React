@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from './Header'
-
+import Footer from "./Footer";
+import { Link } from "react-router-dom";
 const Login = () => {
   const [input, setInput] = useState({
     username: "",
@@ -25,15 +26,16 @@ const Login = () => {
 
   return (
     <>
-   
-    <form className ="container mx-auto w-[360px] rounded-md border-4 border-purple-800  space-y-2 p-4" onSubmit={handleSubmitEvent}>
+   <div className="text-white bg-purple-500 "> 
+    <Link to ="/"><h1 className="flex justify-center text-5xl ">ShareWare</h1></Link></div>
+    <form className =" my-20 mx-auto w-[360px] rounded-md border-4 border-purple-800  space-y-2 p-4 " onSubmit={handleSubmitEvent}>
       <div className="form_control ">
         <label class ="block text-sm font-semibold" htmlFor="user-email">Email</label>
         <input class="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800 disabled:border-purple-300 disabled:bg-purple-50"
           type="email"
           id="user-email"
           name="email"
-          placeholder="example@yahoo.com"
+          placeholder="example@gmail.com"
           aria-describedby="user-email"
           aria-invalid="false"
           onChange={handleInput}
@@ -62,6 +64,10 @@ const Login = () => {
       </div>
       
     </form>
+    <div className="mb-[340px]">
+
+    </div>
+    <Footer/>
     </>
     
   );

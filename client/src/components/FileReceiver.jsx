@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
+import Header from './Header';
+import Footer from './Footer';
 
 const socket = io('http://localhost:5000', {
     transports: ['websocket', 'polling'],
@@ -99,9 +101,15 @@ const FileReceiver = () => {
 
     return (
         <div>
-            <h2>Receive File</h2>
-            <p>Your Peer ID: {peerId || 'Waiting for connection...'}</p>
-            <p>{fileName ? `${downloadStatus}: ${fileName}` : downloadStatus}</p>
+            <Header/>
+            <div className ="container w-[1200px] h-[640px] m-auto my-8 bg-purple-200 shadow-md shadow-black  " >
+            <div className='flex flex-col items-center'>
+            <h2 className='text-3xl text-purple-800'>Receive File</h2>
+            <p className=' font-semibold mt-4 '>Your Peer ID: {peerId || 'Waiting for connection...'}</p>
+            <p className='mt-10 px-12 py-4 border-2 border-purple-800 text-white bg-purple-300 rounded-md'>{fileName ? `${downloadStatus}: ${fileName}` : downloadStatus}</p>
+            </div>
+            </div>
+            <Footer/>
         </div>
     );
 };
