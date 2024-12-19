@@ -1,11 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Footer from "./Footer";
-import { Link } from "react-router-dom";
 
-const Login = ({ setIsAuthenticated }) => {
-  const [input, setInput] = useState({ username: "", password: "" });
+const SignUp = () => {
+  const [input, setInput] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -20,78 +22,87 @@ const Login = ({ setIsAuthenticated }) => {
   const handleSubmitEvent = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", input);
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/signup",
+        input
+      );
       const { token, username } = response.data;
 
       // Save token to localStorage or a global state
       localStorage.setItem("authToken", token);
-      setIsAuthenticated(true);
 
-      // Redirect to the protected page
-      navigate("/sent");
+      // Redirect to login page or main page
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
     }
   };
 
   return (
-    <>
-      <div className="text-white bg-purple-500">
-        <Link to="/">
-          <h1 className="flex justify-center text-5xl">ShareWare</h1>
-        </Link>
-      </div>
+    <div className="sign-up-form">
+      <h1 className="text-center text-3xl text-purple-800">Sign Up</h1>
       <form
-        className="my-20 mx-auto w-[360px] rounded-md border-4 border-purple-800 space-y-2 p-4"
+        className="my-20 mx-auto w-[360px] rounded-md border-4 border-purple-800 space-y-4 p-4"
         onSubmit={handleSubmitEvent}
       >
         {error && <p className="text-red-500">{error}</p>}
+
         <div className="form_control">
           <label className="block text-sm font-semibold" htmlFor="username">
-            Username or Email
+            Username
           </label>
           <input
-            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800 disabled:border-purple-300 disabled:bg-purple-50"
+            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800"
             type="text"
             id="username"
             name="username"
-            placeholder="Enter your username or email"
+            placeholder="Enter your username"
             onChange={handleInput}
+            required
           />
         </div>
+
+        <div className="form_control">
+          <label className="block text-sm font-semibold" htmlFor="email">
+            Email
+          </label>
+          <input
+            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800"
+            type="email"
+            id="email"
+            name="email"
+            placeholder="example@gmail.com"
+            onChange={handleInput}
+            required
+          />
+        </div>
+
         <div className="form_control">
           <label className="block text-sm font-semibold" htmlFor="password">
             Password
           </label>
           <input
-            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800 disabled:border-purple-300 disabled:bg-purple-50"
+            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800"
             type="password"
             id="password"
             name="password"
             placeholder="Enter your password"
             onChange={handleInput}
+            required
           />
         </div>
+
         <div className="space-x-2 flex flex-row justify-between">
           <button
             type="submit"
             className="btn-submit bg-purple-300 text-purple-800 rounded-md border-purple-800 px-2 border-2"
           >
-            LogIn
-          </button>
-          <button
-            type="button"
-            className="btn-submit bg-purple-300 text-purple-800 rounded-md border-purple-800 px-2 border-2"
-          >
-            <Link to ="/signup">Sign Up</Link>
-            
+            Sign Up
           </button>
         </div>
       </form>
-      <div className="mb-[340px]"></div>
-      <Footer />
-    </>
+    </div>
   );
 };
 
-export default Login;
+export default SignUp;

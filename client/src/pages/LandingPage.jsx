@@ -4,6 +4,9 @@ import Header from '../components/Header'
 import FileSender from '../components/FileSender'
 import Footer from '../components/Footer'
 
+
+
+
 function LandingPage() {
   return (
     <>
@@ -21,7 +24,7 @@ function LandingPage() {
                   <Link to ="/receive">Received Files</Link>
                 </li>
                 <li className='hover:text-white'>
-                  <Link>Sent</Link>
+                  <Link to="/sent">Sent</Link>
                 </li>
                 <li className='hover:text-white'>
                   <Link to ="/login"> Login</Link>
