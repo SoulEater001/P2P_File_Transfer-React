@@ -19,6 +19,7 @@ const io = new Server(server, {
         transports: ['websocket', 'polling'],
     },
 });
+const userPeerMapping = {};
 
 // Middleware
 app.use(cors());

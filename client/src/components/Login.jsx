@@ -28,8 +28,9 @@ const Login = ({ setIsAuthenticated }) => {
       setIsAuthenticated(true);
 
       // Redirect to the protected page
-      navigate("/sent");
+      navigate("/");
     } catch (err) {
+      console.error("Axios error details:", err.response || err);
       setError(err.response?.data?.message || "Something went wrong");
     }
   };

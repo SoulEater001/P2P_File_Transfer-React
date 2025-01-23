@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom';
 function Footer() {
     return (
-        <footer className="flex w-full flex-row flex-wrap items-center justify-center gap-y-6 gap-x-12  py-6 text-center md:justify-between sticky top-[100vh] bg-purple-500 text-white">
+        <footer className="flex w-full flex-row flex-wrap items-center justify-center gap-y-6 gap-x-12  py-6 text-center md:justify-between fixed bg-purple-500 text-white">
           <Link color="blue-gray" className="font-normal px-4">
             &copy; 2024 all rights reserved
           </Link>

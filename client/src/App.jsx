@@ -21,9 +21,12 @@ const App = () => {
       <Route path="/" element={<LandingPage />} />
       <Route path="about" element={<About />} />
       <Route path="contact" element={<Contact />} />
-      <Route path="login" element={<Login />} />
-      <Route path="send" element={<FileSender />} />
-      <Route path="receive" element={<FileReceiver />} />
+      <Route
+        path="login"
+        element={<Login setIsAuthenticated={setIsAuthenticated} />}
+      />
+      <Route path="send" element={<ProtectedRoute isAuthenticated={isAuthenticated}><FileSender /></ProtectedRoute>} />
+      <Route path="receive" element={<ProtectedRoute isAuthenticated={isAuthenticated}><FileReceiver /></ProtectedRoute>} />
       <Route path="/signup" element={<SignUp />} />
       <Route
         path="sent"

@@ -7,6 +7,7 @@ const router = express.Router();
 // Fetch transfer history for the logged-in user
 router.get('/history', authMiddleware, async (req, res) => {
     try {
+        //  console.log(req)
         const history = await TransferHistory.find({ user: req.user.id }).sort({ transferDate: -1 }); // Sort by transferDate descending
         res.status(200).json({ history });
     } catch (err) {
