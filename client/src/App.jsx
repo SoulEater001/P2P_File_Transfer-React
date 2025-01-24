@@ -25,8 +25,8 @@ const App = () => {
         path="login"
         element={<Login setIsAuthenticated={setIsAuthenticated} />}
       />
-      <Route path="send" element={<ProtectedRoute isAuthenticated={isAuthenticated}><FileSender /></ProtectedRoute>} />
-      <Route path="receive" element={<ProtectedRoute isAuthenticated={isAuthenticated}><FileReceiver /></ProtectedRoute>} />
+      <Route path="send" element={<FileSender />} />
+      <Route path="receive" element={<FileReceiver />} />
       <Route path="/signup" element={<SignUp />} />
       <Route
         path="sent"

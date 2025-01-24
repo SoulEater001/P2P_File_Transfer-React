@@ -5,6 +5,6 @@
 
 @layer base{
     html{
-        @apply bg-gradient-to-t from-slate-100 to-violet-200
+        /* @apply bg-gradient-to-t from-slate-100 to-violet-200 */
     }
 }

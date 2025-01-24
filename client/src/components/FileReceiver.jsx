@@ -2,10 +2,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import Header from './Header';
 import Footer from './Footer';
+import socket from '../provider/socket';
 
-const socket = io('http://localhost:5000', {
-    transports: ['websocket', 'polling'],
-});
+// const socket = io('http://localhost:5000', {
+//     transports: ['websocket', 'polling'],
+// });
 
 const peerConnection = new RTCPeerConnection();
 
@@ -19,11 +20,13 @@ const FileReceiver = () => {
     const fileNameRef = useRef(''); // Use ref to keep track of the file name
 
     useEffect(() => {
-        socket.on('connect', () => {
+        if(socket.connected){
             setPeerId(socket.id);
+        }
+        socket.on('connect', () => {
+            
             console.log('Peer ID:', socket.id);
-        });
-
+        })
         // Handle incoming offer from the sender
         socket.on('offer', async (data) => {
             console.log('Offer received from:', data.sender);

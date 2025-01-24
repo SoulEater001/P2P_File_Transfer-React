@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-
-const socket = io('http://localhost:5000', {
-    transports: ['websocket', 'polling'],
-});
+import socket from '../provider/socket';
+// const socket = io('http://localhost:5000', {
+//     transports: ['websocket', 'polling'],
+// });
 
 const peerConnection = new RTCPeerConnection({
     iceServers: [
@@ -110,7 +110,7 @@ const FileSender = () => {
             <input  
                 className='m-auto border-2 border-purple-800 rounded-md  text-center '
                 type="text"
-                placeholder="Enter your ID"
+                placeholder="Enter target ID"
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
             />
