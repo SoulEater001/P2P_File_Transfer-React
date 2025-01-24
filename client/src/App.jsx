@@ -8,7 +8,7 @@ import LandingPage from "./pages/LandingPage";
 import Login from "./components/Login";
 import History from "./components/History";
 import ProtectedRoute from "./routes/ProtectedRoute";
-import SignUp from "./components/Signup";
+import SignUp from "./components/SignUp.jsx";
 
 const App = () => {
   // Simulate authentication state (replace with real auth logic)
