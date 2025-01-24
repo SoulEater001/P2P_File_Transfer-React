@@ -23,7 +23,7 @@ const SignUp = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/signup",
+        "https://p2pfiletransfer-react-backend-production.up.railway.app/api/auth/signup",
         input
       );
       const { token, username } = response.data;

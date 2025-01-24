@@ -17,7 +17,7 @@ function History() {
         return;
       }
 
-      const response = await axios.get("http://localhost:5000/api/transfer/history", {
+      const response = await axios.get("https://p2pfiletransfer-react-backend-production.up.railway.app/api/transfer/history", {
         headers: {
           Authorization: `Bearer ${token}`, // Attach token to the request
         },
