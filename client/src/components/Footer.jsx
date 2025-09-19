@@ -1,44 +1,73 @@
-import React from 'react'
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { FaGithub, FaTwitter, FaLinkedin } from 'react-icons/fa';
+
 function Footer() {
-    return (
-        <footer className="flex w-full flex-row flex-wrap items-center justify-center gap-y-6 gap-x-12  py-6 text-center md:justify-between fixed bg-purple-500 text-white">
-          <Link color="blue-gray" className="font-normal px-4">
-            &copy; 2024 all rights reserved
-          </Link>
-          <ul className="flex flex-wrap items-center gap-y-2 gap-x-8 px-10 ">
-            <li>
-              <Link
-                to="/about"
-                color="blue-gray"
-                className="font-normal transition-colors hover:text-blue-500 focus:text-blue-500"
-              >
-                About Us
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="*"
-                color="blue-gray"
-                className="font-normal transition-colors hover:text-blue-500 focus:text-blue-500"
-              >
-                License
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/contact"
-                color="blue-gray"
-                className="font-normal transition-colors hover:text-blue-500 focus:text-blue-500"
-              >
-                Contact Us
-              </Link>
-            </li>
-          </ul>
-        </footer>
-      );
+  return (
+    <footer className="bg-cyan-700 text-white mt-12">
+      <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        {/* Left side: Brand & Copyright */}
+        <div className="text-center md:text-left">
+          <h2 className="text-xl font-bold mb-1">ShareWare</h2>
+          <p className="text-sm">&copy; 2024 ShareWare. All rights reserved.</p>
+        </div>
+
+        {/* Center: Quick Links */}
+        <ul className="flex flex-wrap justify-center gap-6 text-sm">
+          <li>
+            <Link
+              to="/about"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              About Us
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/contact"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              Contact
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/terms"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              Terms &amp; Conditions
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/privacy"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+          </li>
+        </ul>
+
+        {/* Right side: Social Icons */}
+        <div className="flex gap-4 text-xl">
+          <a href="https://github.com/SoulEater001/P2P_File_Transfer-React" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-300 transition-colors">
+            <FaGithub />
+          </a>
+          <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-300 transition-colors">
+            <FaTwitter />
+          </a>
+          <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-300 transition-colors">
+            <FaLinkedin />
+          </a>
+        </div>
+      </div>
+
+      {/* Bottom: Small disclaimer */}
+      <div className="bg-cyan-800 text-center text-xs py-2">
+        <p>Files are securely transferred via P2P technology. Use responsibly.</p>
+      </div>
+    </footer>
+  );
 }
 
-export default Footer
-
-
+export default Footer;

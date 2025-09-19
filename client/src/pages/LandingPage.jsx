@@ -1,50 +1,35 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 function LandingPage() {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  console.log(API_BASE_URL)
   return (
     <>
       <Header />
-      <div className="container w-[1200px] h-[640px] m-auto my-8 bg-purple-200 shadow-md shadow-black">
-        <nav className="flex flex-row justify-between pt-2 px-4 text-violet-900">
-          <ul className="text-xl">
-            <li>ShareWare Peer 2 Peer File Transfer</li>
-          </ul>
-          <ul className="flex flex-row justify-end space-x-4 text-xl">
-            <li className="hover:text-white">
-              <Link to="/send">Send Files</Link>
-            </li>
-            <li className="hover:text-white">
-              <Link to="/receive">Received Files</Link>
-            </li>
-            <li className="hover:text-white">
-              <Link to="/sent">Sent</Link>
-            </li>
-            <li className="hover:text-white">
-              <Link to="/login">Login</Link>
-            </li>
-          </ul>
-        </nav>
+      <div className="container w-[1200px] m-auto my-8">
 
         {/* Hero Section */}
-        <div className="p-4 text-center">
-          <h1 className="text-4xl text-purple-800 font-bold mb-4">
-            A seamless way to transfer your files without any limits!
+        <div className="p-8 text-center bg-gradient-to-r from-cyan-100 to-blue-100 rounded-xl shadow-xl">
+          <h1 className="text-5xl font-extrabold text-blue-800 mb-6">
+            Transfer Files Seamlessly
           </h1>
-          <p className="text-xl text-purple-600 mb-8">
-            ShareWare allows you to send and receive files quickly, securely, and without restrictions. With our peer-to-peer (P2P) technology, you can transfer files directly between devices, ensuring a fast and efficient experience.
+          <p className="text-xl text-blue-700 mb-8 max-w-3xl mx-auto">
+            ShareWare allows you to send and receive files quickly, securely, and without restrictions. 
+            Transfer directly between devices using P2P technology.
           </p>
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center space-x-6">
             <Link
               to="/send"
-              className="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-700"
+              className="bg-cyan-500 text-white py-3 px-6 rounded-lg shadow hover:bg-cyan-600 transition"
             >
               Send Files
             </Link>
             <Link
               to="/receive"
-              className="bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-700"
+              className="bg-cyan-500 text-white py-3 px-6 rounded-lg shadow hover:bg-cyan-600 transition"
             >
               Receive Files
             </Link>
@@ -52,59 +37,56 @@ function LandingPage() {
         </div>
 
         {/* Features Section */}
-        <div className="mt-12 px-4 text-center">
-          <h2 className="text-3xl text-purple-800 font-bold mb-6">Why Choose ShareWare?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-2xl text-purple-800 font-semibold mb-4">Fast Transfers</h3>
+        <div className="mt-16 text-center">
+          <h2 className="text-4xl font-bold text-blue-800 mb-10">Why Choose ShareWare?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition">
+              <h3 className="text-2xl font-semibold text-blue-800 mb-4">Fast Transfers</h3>
               <p className="text-gray-600">
-                ShareWare leverages the power of peer-to-peer technology, ensuring lightning-fast file transfers without any delays.
+                Lightning-fast P2P file transfers with no delays or servers in between.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-2xl text-purple-800 font-semibold mb-4">Secure Connections</h3>
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition">
+              <h3 className="text-2xl font-semibold text-blue-800 mb-4">Secure Connections</h3>
               <p className="text-gray-600">
-                Your data is safe with ShareWare. We use advanced encryption to ensure that your files remain private and secure during transit.
+                Advanced encryption keeps your files safe and private during transfer.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-2xl text-purple-800 font-semibold mb-4">No Limits</h3>
+            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition">
+              <h3 className="text-2xl font-semibold text-blue-800 mb-4">No Limits</h3>
               <p className="text-gray-600">
-                Unlike other file transfer services, ShareWare imposes no file size limits. Transfer any file, anytime, without restrictions.
+                Transfer any file size without restrictions. No servers, no limits.
               </p>
             </div>
           </div>
         </div>
 
         {/* How It Works Section */}
-        <div className="mt-12 px-4 text-center bg-purple-100 py-8">
-          <h2 className="text-3xl text-purple-800 font-bold mb-6">How It Works</h2>
-          <p className="text-xl text-purple-600 mb-8">
-            ShareWare utilizes WebRTC and WebSocket for seamless peer-to-peer file transfers. Here's how it works:
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-2xl text-purple-800 font-semibold mb-4">Step 1: Connect</h3>
+        <div className="mt-16 bg-cyan-50 py-12 px-6 rounded-xl">
+          <h2 className="text-4xl font-bold text-blue-800 text-center mb-10">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition">
+              <h3 className="text-2xl font-semibold text-blue-800 mb-4">Step 1: Connect</h3>
               <p className="text-gray-600">
-                Connect with the device you want to send or receive files from using our intuitive interface.
+                Connect with the device you want to send or receive files from.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-2xl text-purple-800 font-semibold mb-4">Step 2: Transfer</h3>
+            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition">
+              <h3 className="text-2xl font-semibold text-blue-800 mb-4">Step 2: Transfer</h3>
               <p className="text-gray-600">
-                Send files instantly via direct peer-to-peer connection, ensuring fast and efficient transfer.
+                Send files instantly via direct P2P connection, ensuring fast and efficient transfer.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h3 className="text-2xl text-purple-800 font-semibold mb-4">Step 3: Complete</h3>
+            <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition">
+              <h3 className="text-2xl font-semibold text-blue-800 mb-4">Step 3: Complete</h3>
               <p className="text-gray-600">
-                Receive files on your device without the need for any additional software or services. It’s that simple!
+                Receive files on your device without extra software or services.
               </p>
             </div>
           </div>
         </div>
       </div>
-      {/* <Footer /> */}
+      <Footer/>
     </>
   );
 }

@@ -1,95 +1,119 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import Footer from "./Footer";
-import { Link } from "react-router-dom";
 
 const Login = ({ setIsAuthenticated }) => {
   const [input, setInput] = useState({ username: "", password: "" });
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInput = (e) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const { name, value } = e.target;
-    setInput((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setInput((prev) => ({ ...prev, [name]: value }));
+    if (error) setError(null);
   };
 
   const handleSubmitEvent = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post("https://p2pfiletransfer-react-backend-production.up.railway.app/api/auth/login", input);
-      const { token, username } = response.data;
+    setLoading(true);
+    setError(null);
 
-      // Save token to localStorage or a global state
+    try {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, input);
+      const { token, username, id } = response.data;
+
       localStorage.setItem("authToken", token);
+      localStorage.setItem("username", username);
+      localStorage.setItem("userId", id);
       setIsAuthenticated(true);
 
-      // Redirect to the protected page
       navigate("/");
     } catch (err) {
-      console.error("Axios error details:", err.response || err);
       setError(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      <div className="text-white bg-purple-500">
+      <div className="text-center py-6 bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-md">
         <Link to="/">
-          <h1 className="flex justify-center text-5xl">ShareWare</h1>
+          <h1 className="text-4xl font-bold tracking-wide">ShareWare</h1>
         </Link>
       </div>
-      <form
-        className="my-20 mx-auto w-[360px] rounded-md border-4 border-purple-800 space-y-2 p-4"
-        onSubmit={handleSubmitEvent}
-      >
-        {error && <p className="text-red-500">{error}</p>}
-        <div className="form_control">
-          <label className="block text-sm font-semibold" htmlFor="username">
-            Username or Email
-          </label>
-          <input
-            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800 disabled:border-purple-300 disabled:bg-purple-50"
-            type="text"
-            id="username"
-            name="username"
-            placeholder="Enter your username or email"
-            onChange={handleInput}
-          />
-        </div>
-        <div className="form_control">
-          <label className="block text-sm font-semibold" htmlFor="password">
-            Password
-          </label>
-          <input
-            className="block w-full rounded-md border-2 border-purple-400 p-2 focus:border-purple-800 disabled:border-purple-300 disabled:bg-purple-50"
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Enter your password"
-            onChange={handleInput}
-          />
-        </div>
-        <div className="space-x-2 flex flex-row justify-between">
-          <button
-            type="submit"
-            className="btn-submit bg-purple-300 text-purple-800 rounded-md border-purple-800 px-2 border-2"
-          >
-            LogIn
-          </button>
-          <button
-            type="button"
-            className="btn-submit bg-purple-300 text-purple-800 rounded-md border-purple-800 px-2 border-2"
-          >
-            <Link to ="/signup">Sign Up</Link>
-            
-          </button>
-        </div>
-      </form>
-      <div className="mb-[340px]"></div>
+
+      <div className="min-h-screen flex items-center justify-center bg-cyan-50 py-12">
+        <form
+          className="w-[380px] p-10 bg-white rounded-2xl shadow-xl space-y-6"
+          onSubmit={handleSubmitEvent}
+        >
+          <h2 className="text-2xl font-semibold text-blue-800 text-center tracking-tight">
+            Log In to Your Account
+          </h2>
+
+          {error && <p className="text-red-500 text-center">{error}</p>}
+
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-1" htmlFor="username">
+              Username or Email
+            </label>
+            <input
+              className="w-full p-3 border-2 border-blue-200 rounded-lg focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition outline-none"
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Enter your username or email"
+              value={input.username}
+              onChange={handleInput}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-1" htmlFor="password">
+              Password
+            </label>
+            <input
+              className="w-full p-3 border-2 border-blue-200 rounded-lg focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition outline-none"
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              value={input.password}
+              onChange={handleInput}
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <div className="flex justify-between space-x-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-1/2 py-3 rounded-lg font-semibold text-white transition transform ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-cyan-500 to-blue-500 hover:scale-105"
+              }`}
+            >
+              {loading ? "Logging in..." : "Log In"}
+            </button>
+
+            <Link
+              to="/signup"
+              className="w-1/2 py-3 text-center rounded-lg font-semibold text-cyan-700 bg-cyan-100 hover:bg-cyan-200 hover:scale-105 transition transform"
+            >
+              Sign Up
+            </Link>
+          </div>
+        </form>
+      </div>
+
       <Footer />
     </>
   );

@@ -2,117 +2,127 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import authRoutes from './routes/auth.js';
-import transferHistoryRoutes from './routes/transferHistory.js';
-import authMiddleware from './middleware/auth.js';
-import TransferHistory from './models/history.js';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 
-const app = express();
+import authRoutes from './routes/auth.js';
+import transferHistoryRoutes from './routes/transferHistory.js';
+import TransferHistory from './models/history.js';
+
 dotenv.config();
+const app = express();
 const server = http.createServer(app);
+
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:3000', // Allow requests from your frontend
+        origin: 'http://localhost:5000',
         methods: ['GET', 'POST'],
         transports: ['websocket', 'polling'],
     },
 });
-const userPeerMapping = {};
 
-// Middleware
+// Map of userId => socketId
+const userPeerMapping = {};
+app.locals.userPeerMapping = userPeerMapping;
+
 app.use(cors());
 app.use(express.json());
 
-// Basic route for testing server
-app.get('/', (req, res) => {
-    res.status(200).send('Welcome to the P2P File Transfer Server');
-});
+// Basic route
+app.get('/', (req, res) => res.send('Welcome to P2P File Transfer Server'));
 
+// Auth & transfer routes
 app.use('/api/auth', authRoutes);
-app.get('/api/protected', authMiddleware, (req, res) => {
-    res.status(200).json({
-        message: 'This is a protected route',
-        user: req.user,  // User info attached by JWT
-    });
-});
 app.use('/api/transfer', transferHistoryRoutes);
 
-// Handle WebSocket connections
+// Protected test route
+app.get('/api/protected', async (req, res) => res.status(200).json({ message: 'Protected route' }));
+
+// --- SOCKET.IO LOGIC ---
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+    console.log('User connected:', socket.id);
 
-    // Listen for custom events
-    socket.on('offer', async (data) => {
-
-        io.to(data.target).emit('offer', { sender: socket.id, offer: data.offer });
-    });
-
-    socket.on('transfer-start', async (data) => {
-        const { fileName, fileType, fileSize } = data;
+    // Authenticate socket with JWT
+    socket.on('authenticate', (data) => {
+        const { token } = data;
         try {
-            const transferHistory = new TransferHistory({
-                sender: socket.id, // Use socket.id as sender's unique identifier
-                receiver: data.target,  // Target user's socket.id as receiver's unique identifier
-                fileName: fileName,  // File name
-                fileType: fileType,  // File type (MIME type)
-                fileSize: fileSize,  // File size in bytes
-                status: 'Pending',   // Initially, the status is 'Pending'
-                transferDate: new Date().toUTCString(), // Current date and time of transfer
-            });
-
-            // Save the transfer history entry
-            await transferHistory.save();
-            console.log('Transfer history saved successfully.');
-
-
-        } catch (error) {
-            console.error('Error saving transfer history:', error);
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            userPeerMapping[decoded.id] = socket.id;
+            socket.userId = decoded.id;
+            console.log(`User ${decoded.id} connected via socket ${socket.id}`);
+        } catch (err) {
+            console.log('Socket authentication failed:', err.message);
+            socket.disconnect();
         }
     });
 
-    socket.on('file-received', async (data) => {
-        const { fileName, sender } = data;
+    // Handle file offer
+    socket.on('offer', (data) => {
+        const targetSocketId = userPeerMapping[data.targetUserId];
+        if (!targetSocketId) return;
+        io.to(targetSocketId).emit('offer', { senderUserId: socket.userId, offer: data.offer,senderName:data.senderName });
+    });
 
+    // Start transfer and save history
+    socket.on('transfer-start', async (data) => {
+        const { targetUserId, fileName, fileType, fileSize } = data;
         try {
-            // Find the relevant transfer history entry and update the status to 'Received'
+            const transferHistory = new TransferHistory({
+                sender: socket.userId,
+                receiver: targetUserId,
+                fileName,
+                fileType,
+                fileSize,
+                status: 'Pending',
+                transferDate: new Date()
+            });
+            await transferHistory.save();
+            console.log('Transfer history saved.');
+        } catch (err) {
+            console.error('Error saving transfer history:', err);
+        }
+    });
+
+    // Mark file as received
+    socket.on('file-received', async (data) => {
+        const { fileName, senderUserId } = data;
+        try {
             const transfer = await TransferHistory.findOneAndUpdate(
-                { fileName: fileName, sender: sender, status: "Pending" },
+                { fileName, sender: senderUserId, status: 'Pending' },
                 { status: 'Received' },
                 { new: true }
             );
-            if (transfer) {
-                console.log(`Transfer for file "${fileName}" marked as Received.`);
-            } else {
-                console.log('No matching received transfer found to update.');
-            }
-        } catch (error) {
-            console.error('Error updating transfer status to Received:', error);
+            if (transfer) console.log(`File "${fileName}" marked as received`);
+        } catch (err) {
+            console.error('Error updating transfer status:', err);
         }
     });
 
+    // Handle answer and ICE candidates
     socket.on('answer', (data) => {
-        // console.log('Answer received:', data);
-        io.to(data.target).emit('answer', { sender: socket.id, answer: data.answer });
+        const targetSocketId = userPeerMapping[data.targetUserId];
+        if (!targetSocketId) return;
+        io.to(targetSocketId).emit('answer', { senderUserId: socket.userId, answer: data.answer });
     });
 
     socket.on('ice-candidate', (data) => {
-        // console.log('ICE candidate received:', data);
-        io.to(data.target).emit('ice-candidate', { candidate: data.candidate });
+        const targetSocketId = userPeerMapping[data.targetUserId];
+        if (!targetSocketId) return;
+        io.to(targetSocketId).emit('ice-candidate', { candidate: data.candidate });
     });
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        if (socket.userId) delete userPeerMapping[socket.userId];
     });
 });
 
-// Database connection
-mongoose.connect(process.env.MONGO_URL).then(() => console.log('MongoDB connected'))
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URL)
+    .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
-// Start the server
-const PORT = process.env.PORT || 5000;;
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

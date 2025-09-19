@@ -1,118 +1,172 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { io } from 'socket.io-client';
-import Header from './Header';
-import Footer from './Footer';
-import socket from '../provider/socket';
-
-// const socket = io('http://localhost:5000', {
-//     transports: ['websocket', 'polling'],
-// });
-
-const peerConnection = new RTCPeerConnection();
+import React, { useState, useEffect, useRef } from "react";
+import socket, { connectSocket } from "../provider/socket";
+import Header from "./Header";
+import Footer from "./Footer";
 
 const FileReceiver = () => {
-    const [peerId, setPeerId] = useState('');
-    const [senderId, setSenderId] = useState('');
-    const [fileName, setFileName] = useState('');
-    const [downloadStatus, setDownloadStatus] = useState('Waiting for file...');
-    const receivedChunks = useRef([]); // Store chunks of the file
-    const isDownloading = useRef(false); // Prevent duplicate downloads
-    const fileNameRef = useRef(''); // Use ref to keep track of the file name
+    const [peerId, setPeerId] = useState("");
+    const [senderName, setSenderName] = useState("");
+    const [fileName, setFileName] = useState("");
+    const [fileSize, setFileSize] = useState(0);
+    const [downloadStatus, setDownloadStatus] = useState("Waiting for file...");
+    const [progress, setProgress] = useState(0);
+
+    const peerConnectionRef = useRef(null);
+    const receivedChunks = useRef([]);
+    const fileNameRef = useRef("");
+    const isDownloading = useRef(false);
+
+    const resetTransfer = () => {
+        receivedChunks.current = [];
+        isDownloading.current = false;
+        setProgress(0);
+        setFileName("");
+        setFileSize(0);
+        fileNameRef.current = "";
+        setDownloadStatus("Waiting for file...");
+        setSenderName("");
+        if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+            peerConnectionRef.current = null;
+        }
+    };
 
     useEffect(() => {
-        if(socket.connected){
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+
+        connectSocket(token, () => {
             setPeerId(socket.id);
-        }
-        socket.on('connect', () => {
-            
-            console.log('Peer ID:', socket.id);
-        })
-        // Handle incoming offer from the sender
-        socket.on('offer', async (data) => {
-            console.log('Offer received from:', data.sender);
-            setSenderId(data.sender);
-            setDownloadStatus('Receiving');
+        });
 
-            // Set the remote description from the offer
+        socket.on("connect", () => setPeerId(socket.id));
+
+        // Handle incoming WebRTC offer
+        socket.on("offer", async (data) => {
+            resetTransfer();
+
+            setSenderName(data.senderName || "Unknown");
+            setDownloadStatus("Receiving...");
+
+            peerConnectionRef.current = new RTCPeerConnection({
+                iceServers: [
+                    { urls: ["stun:stun.l.google.com:19302"] },
+                    { urls: ["stun:stun.l.google.com:5349"] },
+                ],
+            });
+            const peerConnection = peerConnectionRef.current;
+
+            peerConnection.ondatachannel = (event) => {
+                const dataChannel = event.channel;
+
+                dataChannel.onmessage = (event) => {
+                    try {
+                        const parsed = JSON.parse(event.data);
+                        if (parsed.type === "metadata") {
+                            setFileName(parsed.fileName);
+                            fileNameRef.current = parsed.fileName;
+                            setFileSize(parsed.fileSize);
+                            return;
+                        }
+                        if (parsed.type === "Sent") {
+                            const fileBlob = new Blob(receivedChunks.current);
+                            const url = URL.createObjectURL(fileBlob);
+
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.download = fileNameRef.current || "received-file";
+                            link.click();
+
+                            socket.emit("file-received", {
+                                fileName: fileNameRef.current,
+                                senderUserId: data.senderUserId,
+                            });
+
+                            setDownloadStatus("Received");
+                            setProgress(100);
+
+                            // ✅ cleanup
+                            dataChannel.close();
+                            peerConnection.close();
+                            return;
+                        }
+                    } catch {
+                        receivedChunks.current.push(event.data);
+                        if (fileSize > 0) {
+                            const receivedBytes = receivedChunks.current.reduce(
+                                (acc, chunk) => acc + (chunk.byteLength || chunk.size || 0),
+                                0
+                            );
+                            setProgress(Math.min((receivedBytes / fileSize) * 100, 100));
+                        }
+                    }
+                };
+            };
+
             await peerConnection.setRemoteDescription(data.offer);
-
-            // Create and send the answer
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
 
-            // Emit the answer back to the sender
-            socket.emit('answer', { target: data.sender, answer });
+            socket.emit("answer", { targetUserId: data.senderUserId, answer });
         });
 
-        // Handle ICE candidates from the sender
-        socket.on('ice-candidate', (data) => {
-            peerConnection.addIceCandidate(data.candidate);
+        socket.on("ice-candidate", (data) => {
+            if (
+                data?.candidate &&
+                peerConnectionRef.current &&
+                peerConnectionRef.current.signalingState !== "closed"
+            ) {
+                peerConnectionRef.current.addIceCandidate(data.candidate)
+                    .catch(err => console.error("ICE add error:", err));
+            }
         });
 
-        // Set up the data channel for receiving the file
-        peerConnection.ondatachannel = (event) => {
-            const dataChannel = event.channel;
-
-            // Reset the chunks array and download flag every time a new transfer begins
-            receivedChunks.current = [];
-            isDownloading.current = false;
-
-            dataChannel.onmessage = (event) => {
-                if (event.data === '{"type":"Sent"}' && !isDownloading.current) {
-                    // File transfer complete, reconstruct the file
-                    const fileBlob = new Blob(receivedChunks.current);
-                    const url = URL.createObjectURL(fileBlob);
-
-                    // Trigger the download
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileNameRef.current || 'received-file'; // Use ref to avoid async state issue
-                    link.click();
-
-                    socket.emit('file-received', {
-                        fileName: fileName,
-                        sender: senderId,
-                    });
-
-                    // Mark the file as downloaded
-                    isDownloading.current = true;
-                    setDownloadStatus('Received');
-                } else if (typeof event.data === 'string') {
-                    try {
-                        const metadata = JSON.parse(event.data);
-                        if (metadata.type === 'metadata') {
-                            console.log('Metadata received:', metadata);
-                            setFileName(metadata.fileName); // Update the state (for UI display)
-                            fileNameRef.current = metadata.fileName; // Update ref for immediate use
-                            console.log('File name set to:', fileNameRef.current); // Log the updated fileName
-                        }
-                    } catch (e) {
-                        console.error('Error parsing metadata:', e);
-                    }
-                } else {
-                    // Append binary data chunks
-                    receivedChunks.current.push(event.data);
-                }
-            };
-        };
-
+        // ✅ Proper cleanup inside useEffect
         return () => {
-            socket.off('offer');
-            socket.off('ice-candidate');
+            socket.off("offer");
+            socket.off("ice-candidate");
+            if (peerConnectionRef.current) {
+                peerConnectionRef.current.close();
+                peerConnectionRef.current = null;
+            }
         };
     }, []);
 
     return (
-        <div>
-            <Header/>
-            <div className ="container w-[1200px] h-[640px] m-auto my-8 bg-purple-200 shadow-md shadow-black  " >
-            <div className='flex flex-col items-center'>
-            <h2 className='text-3xl text-purple-800'>Receive File</h2>
-            <p className=' font-semibold mt-4 '>Your Peer ID: {peerId || 'Waiting for connection...'}</p>
-            <p className='mt-10 px-12 py-4 border-2 border-purple-800 text-white bg-purple-300 rounded-md'>{fileName ? `${downloadStatus}: ${fileName}` : downloadStatus}</p>
+        <div className="min-h-screen flex flex-col bg-gray-50">
+            <Header />
+            <div className="flex-grow flex items-center justify-center py-10">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
+                        Receive File
+                    </h2>
+                    <p className="text-center text-gray-600 mb-2">Connected to:</p>
+                    <p className="text-center text-cyan-600 font-semibold mb-4">
+                        {senderName || "Waiting for sender..."}
+                    </p>
+
+                    <div className="p-4 mb-4 text-center bg-cyan-100 border border-cyan-400 rounded-lg">
+                        <p className="text-gray-700 font-medium">
+                            {fileName ? `${downloadStatus}: ${fileName}` : downloadStatus}
+                        </p>
+                    </div>
+
+                    {fileName && downloadStatus !== "Received" && (
+                        <div className="w-full bg-gray-200 h-3 rounded-full mb-4">
+                            <div
+                                className="bg-cyan-500 h-3 rounded-full transition-all"
+                                style={{ width: `${progress}%` }}
+                            ></div>
+                        </div>
+                    )}
+
+                    <p className="text-sm text-gray-500 text-center">
+                        Files are received securely via P2P. You will be prompted to
+                        download once completed.
+                    </p>
+                </div>
             </div>
-            </div>
-            <Footer/>
+            <Footer />
         </div>
     );
 };

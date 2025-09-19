@@ -3,15 +3,13 @@ import mongoose from 'mongoose';
 const transferHistorySchema = new mongoose.Schema(
     {
         sender: {
-            // type: mongoose.Schema.Types.ObjectId,
-            type: String,
-            // ref: 'User',
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
             required: true,
         },
         receiver: {
-            // type: mongoose.Schema.Types.ObjectId,
-            // ref: 'User',
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
             required: true,
         },
         fileName: {
@@ -25,10 +23,7 @@ const transferHistorySchema = new mongoose.Schema(
             type: String, required: true
 
         },
-        status: {
-            type: String, required: true
-
-        },
+        status: { type: String, enum: ['Pending', 'Received'], default: 'Pending' },
         transferDate: {
             type: Date, default: Date.now
 

@@ -14,7 +14,7 @@ router.post('/signup', [
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res.status(400).json({ message: errors.array()[0].msg });
     }
 
     const { username, email, password } = req.body;
@@ -33,12 +33,18 @@ router.post('/signup', [
 
         const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(201).json({ token, username: newUser.username });
+        res.status(201).json({
+            token,
+            username: newUser.username,
+            email: newUser.email,
+            id: newUser._id
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error', error: err.message });
+        res.status(500).json({ message: 'Server error, please try again later' });
     }
 });
+
 
 // Login route
 router.post('/login', async (req, res) => {
@@ -52,7 +58,7 @@ router.post('/login', async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).json({ token, username: user.username });
+        res.status(200).json({ token, username: user.username, email: user.email, id: user._id });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error', error: err.message });

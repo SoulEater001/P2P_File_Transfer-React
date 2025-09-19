@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 function History() {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [history, setHistory] = useState([]); // Store history data
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
@@ -17,7 +18,7 @@ function History() {
         return;
       }
 
-      const response = await axios.get("https://p2pfiletransfer-react-backend-production.up.railway.app/api/transfer/history", {
+      const response = await axios.get(`${API_BASE_URL}/transfer/history`, {
         headers: {
           Authorization: `Bearer ${token}`, // Attach token to the request
         },
