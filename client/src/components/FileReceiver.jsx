@@ -4,96 +4,82 @@ import Header from "./Header";
 import Footer from "./Footer";
 
 const FileReceiver = () => {
-    const [peerId, setPeerId] = useState("");
     const [senderName, setSenderName] = useState("");
     const [fileName, setFileName] = useState("");
     const [fileSize, setFileSize] = useState(0);
-    const [downloadStatus, setDownloadStatus] = useState("Waiting for file...");
+    const [status, setStatus] = useState("Waiting...");
     const [progress, setProgress] = useState(0);
 
-    const peerConnectionRef = useRef(null);
-    const receivedChunks = useRef([]);
+    const pcRef = useRef(null);
+    const isCompleted = useRef(false);
+    const transferIdRef = useRef(null);
+    const chunksRef = useRef([]);
     const fileNameRef = useRef("");
-    const isDownloading = useRef(false);
-
-    const resetTransfer = () => {
-        receivedChunks.current = [];
-        isDownloading.current = false;
-        setProgress(0);
-        setFileName("");
-        setFileSize(0);
-        fileNameRef.current = "";
-        setDownloadStatus("Waiting for file...");
-        setSenderName("");
-        if (peerConnectionRef.current) {
-            peerConnectionRef.current.close();
-            peerConnectionRef.current = null;
-        }
-    };
 
     useEffect(() => {
         const token = localStorage.getItem("authToken");
         if (!token) return;
 
-        connectSocket(token, () => {
-            setPeerId(socket.id);
+        // Connect and authenticate socket
+        connectSocket(token);
+
+        // Handle ICE candidates
+        socket.on("ice-candidate", (data) => {
+            if (data.transferId === transferIdRef.current && pcRef.current) {
+                pcRef.current.addIceCandidate(data.candidate).catch((err) => console.error(err));
+            }
         });
 
-        socket.on("connect", () => setPeerId(socket.id));
-
-        // Handle incoming WebRTC offer
+        // Handle incoming offer
         socket.on("offer", async (data) => {
-            resetTransfer();
+            transferIdRef.current = data.transferId;
+            setSenderName(data.senderName);
+            setStatus("Receiving...");
+            chunksRef.current = [];
+            fileNameRef.current = "";
+            setFileName("");
+            setFileSize(0);
+            setProgress(0);
+            isCompleted.current = false;
 
-            setSenderName(data.senderName || "Unknown");
-            setDownloadStatus("Receiving...");
-
-            peerConnectionRef.current = new RTCPeerConnection({
-                iceServers: [
-                    { urls: ["stun:stun.l.google.com:19302"] },
-                    { urls: ["stun:stun.l.google.com:5349"] },
-                ],
+            pcRef.current = new RTCPeerConnection({
+                iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }],
             });
-            const peerConnection = peerConnectionRef.current;
 
-            peerConnection.ondatachannel = (event) => {
-                const dataChannel = event.channel;
+            pcRef.current.ondatachannel = (event) => {
+                const dc = event.channel;
 
-                dataChannel.onmessage = (event) => {
+                dc.onmessage = (event) => {
+                    if (isCompleted.current) return; // Ignore if already completed
+
                     try {
                         const parsed = JSON.parse(event.data);
+
                         if (parsed.type === "metadata") {
                             setFileName(parsed.fileName);
-                            fileNameRef.current = parsed.fileName;
                             setFileSize(parsed.fileSize);
-                            return;
-                        }
-                        if (parsed.type === "Sent") {
-                            const fileBlob = new Blob(receivedChunks.current);
-                            const url = URL.createObjectURL(fileBlob);
-
+                            fileNameRef.current = parsed.fileName;
+                        } else if (parsed.type === "Sent") {
+                            const blob = new Blob(chunksRef.current);
+                            const url = URL.createObjectURL(blob);
                             const link = document.createElement("a");
                             link.href = url;
-                            link.download = fileNameRef.current || "received-file";
+                            link.download = fileNameRef.current;
                             link.click();
 
-                            socket.emit("file-received", {
-                                fileName: fileNameRef.current,
-                                senderUserId: data.senderUserId,
-                            });
-
-                            setDownloadStatus("Received");
+                            socket.emit("file-received", { transferId: transferIdRef.current });
+                            setStatus("Received");
                             setProgress(100);
+                            isCompleted.current = true;
 
-                            // ✅ cleanup
-                            dataChannel.close();
-                            peerConnection.close();
-                            return;
+                            dc.close();
+                            if (pcRef.current) pcRef.current.close();
                         }
                     } catch {
-                        receivedChunks.current.push(event.data);
+                        // Raw chunk
+                        chunksRef.current.push(event.data);
                         if (fileSize > 0) {
-                            const receivedBytes = receivedChunks.current.reduce(
+                            const receivedBytes = chunksRef.current.reduce(
                                 (acc, chunk) => acc + (chunk.byteLength || chunk.size || 0),
                                 0
                             );
@@ -101,69 +87,57 @@ const FileReceiver = () => {
                         }
                     }
                 };
+
+                dc.onerror = () => {
+                    if (isCompleted.current) return;
+                    setStatus("Error");
+                    socket.emit("transfer-failed", { transferId: transferIdRef.current });
+                    isCompleted.current = true;
+                };
             };
 
-            await peerConnection.setRemoteDescription(data.offer);
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
+            try {
+                await pcRef.current.setRemoteDescription(data.offer);
+                const answer = await pcRef.current.createAnswer();
+                await pcRef.current.setLocalDescription(answer);
 
-            socket.emit("answer", { targetUserId: data.senderUserId, answer });
-        });
-
-        socket.on("ice-candidate", (data) => {
-            if (
-                data?.candidate &&
-                peerConnectionRef.current &&
-                peerConnectionRef.current.signalingState !== "closed"
-            ) {
-                peerConnectionRef.current.addIceCandidate(data.candidate)
-                    .catch(err => console.error("ICE add error:", err));
+                socket.emit("answer", {
+                    targetUserId: data.senderUserId,
+                    answer,
+                    transferId: transferIdRef.current,
+                });
+            } catch (err) {
+                console.error("Error handling offer:", err);
+                setStatus("Error");
+                socket.emit("transfer-failed", { transferId: transferIdRef.current });
+                isCompleted.current = true;
             }
         });
 
-        // ✅ Proper cleanup inside useEffect
+        // Cleanup on unmount
         return () => {
             socket.off("offer");
             socket.off("ice-candidate");
-            if (peerConnectionRef.current) {
-                peerConnectionRef.current.close();
-                peerConnectionRef.current = null;
-            }
+            if (pcRef.current) pcRef.current.close();
         };
     }, []);
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50">
             <Header />
-            <div className="flex-grow flex items-center justify-center py-10">
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-                    <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
-                        Receive File
-                    </h2>
-                    <p className="text-center text-gray-600 mb-2">Connected to:</p>
-                    <p className="text-center text-cyan-600 font-semibold mb-4">
-                        {senderName || "Waiting for sender..."}
-                    </p>
-
-                    <div className="p-4 mb-4 text-center bg-cyan-100 border border-cyan-400 rounded-lg">
-                        <p className="text-gray-700 font-medium">
-                            {fileName ? `${downloadStatus}: ${fileName}` : downloadStatus}
-                        </p>
-                    </div>
-
-                    {fileName && downloadStatus !== "Received" && (
-                        <div className="w-full bg-gray-200 h-3 rounded-full mb-4">
-                            <div
-                                className="bg-cyan-500 h-3 rounded-full transition-all"
-                                style={{ width: `${progress}%` }}
-                            ></div>
+            <div className="flex-grow flex items-center justify-center">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+                    <h2 className="text-2xl font-bold text-center mb-4">Receive File</h2>
+                    <p className="text-center text-gray-600 mb-2">From: {senderName || "Waiting..."}</p>
+                    <p className="text-center text-gray-700 mb-4">{status}</p>
+                    {fileName && (
+                        <div>
+                            <p className="mb-2">{fileName} ({Math.round(fileSize / 1024)} KB)</p>
+                            <div className="w-full bg-gray-200 h-3 rounded-full">
+                                <div className="bg-cyan-500 h-3 rounded-full" style={{ width: `${progress}%` }}></div>
+                            </div>
                         </div>
                     )}
-
-                    <p className="text-sm text-gray-500 text-center">
-                        Files are received securely via P2P. You will be prompted to
-                        download once completed.
-                    </p>
                 </div>
             </div>
             <Footer />

@@ -16,7 +16,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5000',
+        origin: process.env.FRONTEND_URL,
         methods: ['GET', 'POST'],
         transports: ['websocket', 'polling'],
     },
@@ -57,16 +57,9 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle file offer
-    socket.on('offer', (data) => {
-        const targetSocketId = userPeerMapping[data.targetUserId];
-        if (!targetSocketId) return;
-        io.to(targetSocketId).emit('offer', { senderUserId: socket.userId, offer: data.offer,senderName:data.senderName });
-    });
-
-    // Start transfer and save history
+    // Start transfer: create DB record and return transferId
     socket.on('transfer-start', async (data) => {
-        const { targetUserId, fileName, fileType, fileSize } = data;
+        const { targetUserId, fileName, fileType, fileSize, senderName } = data;
         try {
             const transferHistory = new TransferHistory({
                 sender: socket.userId,
@@ -78,39 +71,113 @@ io.on('connection', (socket) => {
                 transferDate: new Date()
             });
             await transferHistory.save();
-            console.log('Transfer history saved.');
+
+            const transferId = transferHistory._id.toString();
+
+            // Send transferId back to sender
+            socket.emit('transfer-initiated', { transferId });
+
+            // Notify receiver
+            const targetSocketId = userPeerMapping[targetUserId];
+            if (targetSocketId) {
+                io.to(targetSocketId).emit('incoming-transfer', {
+                    transferId,
+                    senderUserId: socket.userId,
+                    senderName,
+                    fileName,
+                    fileSize,
+                    fileType
+                });
+            }
+
+            console.log(`Transfer started: ${transferId}`);
         } catch (err) {
             console.error('Error saving transfer history:', err);
+            socket.emit('transfer-error', { message: 'Could not start transfer' });
         }
     });
 
-    // Mark file as received
+    // Offer
+    socket.on('offer', (data) => {
+        const targetSocketId = userPeerMapping[data.targetUserId];
+        if (!targetSocketId) return;
+        io.to(targetSocketId).emit('offer', {
+            senderUserId: socket.userId,
+            offer: data.offer,
+            senderName: data.senderName,
+            transferId: data.transferId,
+        });
+    });
+
+    // Answer
+    socket.on('answer', (data) => {
+        const targetSocketId = userPeerMapping[data.targetUserId];
+        if (!targetSocketId) return;
+        io.to(targetSocketId).emit('answer', {
+            senderUserId: socket.userId,
+            answer: data.answer,
+            transferId: data.transferId,
+        });
+    });
+
+    // ICE Candidate
+    socket.on('ice-candidate', (data) => {
+        const targetSocketId = userPeerMapping[data.targetUserId];
+        if (!targetSocketId) return;
+        io.to(targetSocketId).emit('ice-candidate', {
+            candidate: data.candidate,
+            transferId: data.transferId,
+        });
+    });
+
+    // File received
     socket.on('file-received', async (data) => {
-        const { fileName, senderUserId } = data;
+        const { transferId, fileName, senderUserId } = data;
         try {
-            const transfer = await TransferHistory.findOneAndUpdate(
-                { fileName, sender: senderUserId, status: 'Pending' },
-                { status: 'Received' },
-                { new: true }
-            );
-            if (transfer) console.log(`File "${fileName}" marked as received`);
+            if (transferId) {
+                await TransferHistory.findByIdAndUpdate(
+                    { _id: transferId, status: 'Pending' },
+                    { status: 'Received' },
+                    { new: true }
+                );
+                console.log(`Transfer ${transferId} marked as Received`);
+            } else {
+                await TransferHistory.findOneAndUpdate(
+                    { fileName, sender: senderUserId, status: 'Pending' },
+                    { status: 'Received' },
+                    { new: true }
+                );
+                console.log(`File "${fileName}" marked as received (fallback)`);
+            }
         } catch (err) {
             console.error('Error updating transfer status:', err);
         }
     });
 
-    // Handle answer and ICE candidates
-    socket.on('answer', (data) => {
-        const targetSocketId = userPeerMapping[data.targetUserId];
-        if (!targetSocketId) return;
-        io.to(targetSocketId).emit('answer', { senderUserId: socket.userId, answer: data.answer });
+    // Transfer failed
+    socket.on('transfer-failed', async ({ transferId }) => {
+        try {
+            if (transferId) {
+                await TransferHistory.findByIdAndUpdate(transferId, { status: 'Failed' });
+                console.log(`Transfer ${transferId} marked as Failed`);
+            }
+        } catch (err) {
+            console.error('Error marking transfer as Failed:', err);
+        }
     });
 
-    socket.on('ice-candidate', (data) => {
-        const targetSocketId = userPeerMapping[data.targetUserId];
-        if (!targetSocketId) return;
-        io.to(targetSocketId).emit('ice-candidate', { candidate: data.candidate });
+    // Transfer cancelled
+    socket.on('transfer-cancelled', async ({ transferId }) => {
+        try {
+            if (transferId) {
+                await TransferHistory.findByIdAndUpdate(transferId, { status: 'Cancelled' });
+                console.log(`Transfer ${transferId} marked as Cancelled`);
+            }
+        } catch (err) {
+            console.error('Error marking transfer as Cancelled:', err);
+        }
     });
+
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);

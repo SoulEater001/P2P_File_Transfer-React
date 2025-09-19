@@ -32,7 +32,7 @@ function Footer() {
           </li>
           <li>
             <Link
-              to="/terms"
+              to="/"
               className="hover:text-cyan-300 transition-colors"
             >
               Terms &amp; Conditions
@@ -40,7 +40,7 @@ function Footer() {
           </li>
           <li>
             <Link
-              to="/privacy"
+              to="/"
               className="hover:text-cyan-300 transition-colors"
             >
               Privacy Policy

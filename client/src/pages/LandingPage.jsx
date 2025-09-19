@@ -4,8 +4,6 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 function LandingPage() {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  console.log(API_BASE_URL)
   return (
     <>
       <Header />

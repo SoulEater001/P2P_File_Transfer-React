@@ -11,6 +11,7 @@ function Header() {
           </Link>
           <div className="flex space-x-10 text-xl">
             <Link to="/" className="text-white hover:text-cyan-200 transition">Home</Link>
+            <Link to="/sent" className="text-white hover:text-cyan-200 transition">History</Link>
             <Link to="/about" className="text-white hover:text-cyan-200 transition">About</Link>
             <Link to="/contact" className="text-white hover:text-cyan-200 transition">Contact</Link>
           </div>

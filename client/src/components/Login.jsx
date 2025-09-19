@@ -8,9 +8,9 @@ const Login = ({ setIsAuthenticated }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleInput = (e) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const { name, value } = e.target;
     setInput((prev) => ({ ...prev, [name]: value }));
     if (error) setError(null);

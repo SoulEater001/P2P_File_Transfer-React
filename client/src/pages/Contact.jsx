@@ -14,7 +14,7 @@ function Contact() {
 
         {/* Contact Form */}
         <div className="bg-white p-8 rounded-lg shadow-md">
-          <form className="flex flex-col space-y-4" onSubmit={(e) => {
+          <form className="flex flex-col space-y-4" netlify onSubmit={(e) => {
             e.preventDefault();
             alert('Message sent successfully!');
           }}>
