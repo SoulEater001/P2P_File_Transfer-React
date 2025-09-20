@@ -1,9 +1,7 @@
 // socket.js
 import { io } from 'socket.io-client';
-
-// Create the socket instance and export it
-// const socket = io('https://p2pfiletransfer-react-backend-production.up.railway.app', {
-const socket = io('http://localhost:5000', {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const socket = io(`${API_BASE_URL}`, {
     transports: ['websocket', 'polling'],
     autoConnect:false,
 });

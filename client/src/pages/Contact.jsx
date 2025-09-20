@@ -63,13 +63,14 @@ function Contact() {
         {/* Support Info */}
         <div className="mt-12 text-center">
           <h2 className="text-2xl font-semibold text-cyan-700 mb-4">Other Ways to Reach Us</h2>
-          <p className="text-gray-700 mb-2">Email: support@shareware.com</p>
-          <p className="text-gray-700 mb-2">Phone: +91 12345 67890</p>
-          <p className="text-gray-700 mb-4">Address: 123 P2P Street, Web City, Internet</p>
+          <p className="text-gray-700 mb-2">Email: dshivam698@gmail.com</p>
+          <p className="text-gray-700 mb-2">Phone: +91 8839651800</p>
+          <p className="text-gray-700 mb-2">Phone: +91 8827677790</p>
+          <p className="text-gray-700 mb-4">Address: Raipur, Chhatisgarh</p>
           <div className="flex justify-center space-x-6 mt-4">
             <a href="#" className="text-cyan-500 hover:text-cyan-700">Twitter</a>
             <a href="#" className="text-cyan-500 hover:text-cyan-700">LinkedIn</a>
-            <a href="#" className="text-cyan-500 hover:text-cyan-700">GitHub</a>
+            <a href="https://github.com/SoulEater001/P2P_File_Transfer-React" className="text-cyan-500 hover:text-cyan-700">GitHub</a>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ function History() {
         return;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/transfer/history`, {
+      const response = await axios.get(`${API_BASE_URL}/api/transfer/history`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

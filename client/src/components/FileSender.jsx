@@ -22,7 +22,7 @@ const FileSender = () => {
 
         const fetchUsers = async () => {
             try {
-                const res = await axios.get(`${API_BASE_URL}/transfer/online-users`, {
+                const res = await axios.get(`${API_BASE_URL}/api/transfer/online-users`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUsers(res.data.users);

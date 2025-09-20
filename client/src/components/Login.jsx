@@ -22,7 +22,7 @@ const Login = ({ setIsAuthenticated }) => {
     setError(null);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, input);
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, input);
       const { token, username, id } = response.data;
 
       localStorage.setItem("authToken", token);
